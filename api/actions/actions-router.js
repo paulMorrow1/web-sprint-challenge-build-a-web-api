@@ -3,6 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const Actions = require("./actions-model");
+const { hasPayload, hasProperty } = require("./actions-middlware");
 
 router.get("/", (req, res) => {
   Actions.get()
@@ -31,46 +32,41 @@ router.get("/:id", (req, res) => {
     });
 });
 
-router.post("/", (req, res) => {
-  const newAction = req.body;
-  if (
-    newAction.hasOwnProperty("notes") &&
-    newAction.hasOwnProperty("description") &&
-    newAction.hasOwnProperty("project_id")
-  ) {
+router.post(
+  "/",
+  hasPayload,
+  hasProperty("notes"),
+  hasProperty("description"),
+  (req, res) => {
+    const newAction = req.body;
     Actions.insert(newAction)
       .then((newAction) => {
         res.json(newAction);
       })
       .catch(() => {
-        res.status(404).json({ message: `Failed to create new action` });
+        res.status(400).json({ message: `Failed to create new action` });
       });
-  } else {
-    res
-      .status(400)
-      .json({ message: `Missing notes, description, and project_id` });
   }
-});
+);
 
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const newAction = req.body;
-  if (
-    newAction.hasOwnProperty("notes") &&
-    newAction.hasOwnProperty("description") &&
-    newAction.hasOwnProperty("project_id")
-  ) {
+router.put(
+  "/:id",
+  hasPayload,
+  hasProperty("notes"),
+  hasProperty("description"),
+  hasProperty("project_id"),
+  (req, res) => {
+    const { id } = req.params;
+    const newAction = req.body;
     Actions.update(id, newAction)
       .then((action) => {
         res.json(action);
       })
       .catch(() => {
-        res.status(404).json({ message: `Error updating the action` });
+        res.status(400).json({ message: `Error updating the action` });
       });
-  } else {
-    res.status(400).json({ message: `please enter required fields` });
   }
-});
+);
 
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
@@ -80,13 +76,13 @@ router.delete("/:id", (req, res) => {
         res.json(wasActionDeleted);
       } else {
         res
-          .status(404)
+          .status(400)
           .json({ message: `could not find action with id: ${id}` });
       }
     })
     .catch(() => {
       res
-        .status(404)
+        .status(400)
         .json({ message: `could not delete action with id: ${id}` });
     });
 });

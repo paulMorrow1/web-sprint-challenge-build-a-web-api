@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const Projects = require("./projects-model");
+const { hasPayload, hasProperty } = require("./projects-middleware");
 
 router.get("/", (req, res) => {
   Projects.get()
@@ -30,55 +31,41 @@ router.get("/:id", (req, res) => {
     });
 });
 
-router.post("/", (req, res) => {
-  const projectObj = req.body;
-  if (projectObj) {
-    if (
-      projectObj.hasOwnProperty("name") &&
-      projectObj.hasOwnProperty("description")
-    ) {
-      Projects.insert(projectObj)
-        .then((project) => {
-          res.json(project);
-        })
-        .catch(() => {
-          res.status(400).json({ message: "failed to create new project" });
-        });
-    } else {
-      res
-        .status(400)
-        .json({ message: "'Name' & 'Description' fields are required" });
-    }
-  } else {
-    res.status(400).json({ message: "missing name and description" });
-  }
-});
-
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const projectObj = req.body;
-  if (projectObj) {
-    if (
-      projectObj.hasOwnProperty("name") &&
-      projectObj.hasOwnProperty("description") &&
-      projectObj.hasOwnProperty("completed")
-    ) {
-      Projects.update(id, projectObj)
-        .then((project) => {
-          res.json(project);
-        })
-        .catch(() => {
-          res.status(400).json({ message: "failed to update project" });
-        });
-    } else {
-      res.status(400).json({
-        message: "'Name' & 'Description' & 'Completed' fields are required",
+router.post(
+  "/",
+  hasPayload,
+  hasProperty("name"),
+  hasProperty("description"),
+  (req, res) => {
+    const projectObj = req.body;
+    Projects.insert(projectObj)
+      .then((project) => {
+        res.json(project);
+      })
+      .catch(() => {
+        res.status(400).json({ message: "failed to create new project" });
       });
-    }
-  } else {
-    res.status(400).json({ message: "send me yo data homie" });
   }
-});
+);
+
+router.put(
+  "/:id",
+  hasPayload,
+  hasProperty("name"),
+  hasProperty("description"),
+  hasProperty("completed"),
+  (req, res) => {
+    const { id } = req.params;
+    const projectObj = req.body;
+    Projects.update(id, projectObj)
+      .then((project) => {
+        res.json(project);
+      })
+      .catch(() => {
+        res.status(400).json({ message: "failed to update project" });
+      });
+  }
+);
 
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
